@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     #1: Model parameters and initialization
     M = 10
-    N = 1
+    N = 5
     X = Model(M)
 
     # 2: Get the CRB estimates of theta
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # estimator using a large number of Monte Carlo trials
 
     # WARNING: LASSO will take a long time!
-    maxiter = 2000
+    maxiter = 1000
     estimators = {
         'Sample': conventional,
         'Meaninator': mean_convential,
@@ -108,6 +108,8 @@ if __name__ == '__main__':
     print('    M: %d' % M)
     print('    N: %d' % N)
     longest = sorted([len(key) for key in estimators])[-1]
+    print('%sMEAN%s\tSTD' % (' '*(longest+2), ' '*8))
     for ii, key in enumerate(estimators):
-        print('%s%s: %f' % (
-            ' '*(longest-len(key)), key, np.mean(err[ii, :])))
+        print('%s%s: %f,\t%f' % (' '*(longest-len(key)), key,
+                                 np.mean(err[ii, :]),
+                                 np.std(err[ii, :])))

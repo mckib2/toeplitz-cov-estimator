@@ -77,9 +77,8 @@ def meaninator(C):
 
     return Rhat
 
-def ordinator(xs):
+def ordinator(_xs):
     '''Make use of sparsity of ordered samples to get estimate.'''
-
 
 def obj(x0, ref_Pxx):
     '''Objective for constrained_psd optimization.
