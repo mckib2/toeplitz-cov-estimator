@@ -2,12 +2,12 @@
 
 import warnings
 from multiprocessing import Pool
-from time import time
+from time import time, ctime
 from functools import partial
 
 import numpy as np
+import matplotlib.pyplot as plt
 from tqdm import tqdm
-from skimage.measure import compare_mse
 
 from model import Model
 from crb import getCRB
@@ -15,7 +15,7 @@ from estimators import (meaninator, conventional, constrained_psd,
                         shrinkage, lasso)
 from structured_estimators import CRZ
 
-def iter_fun(_ii, X, estimators):
+def iter_fun(_ii, X, estimators, N, M):
     '''Picklable function that runs every iteration of parallel loop.
     '''
 
@@ -23,12 +23,13 @@ def iter_fun(_ii, X, estimators):
     Xs = X.sample(N)
 
     # Setup error array to send back (order not guaranteed)
-    err = np.zeros(len(estimators))
+    err = np.zeros((len(estimators), M))
 
     # Do estimation!
     for idx, key in enumerate(estimators):
         try:
-            err[idx] = compare_mse(X.R, estimators[key](Xs))
+            # err[idx] = compare_mse(X.R, estimators[key](Xs))
+            err[idx, :] = X.R[0, :] - estimators[key](Xs)[0, :]
         except ValueError:
             # LASSO wants a few samples to work with
             pass
@@ -57,11 +58,11 @@ if __name__ == '__main__':
 
     #1: Model parameters and initialization
     M = 10
-    N = 5
+    N = 3
     X = Model(M)
 
     # 2: Get the CRB estimates of theta
-    CRB = getCRB(M, N)
+    CRB = getCRB(M, N, np.linalg.inv(X.R))
 
     # # 4.5. Estimate using conventional sample covariance estimator
     # Ns = [10, 100, 1000, 10000]
@@ -78,13 +79,13 @@ if __name__ == '__main__':
     # estimator using a large number of Monte Carlo trials
 
     # WARNING: LASSO will take a long time!
-    maxiter = 1000
+    maxiter = 10000
     estimators = {
         'Sample': conventional,
         'Meaninator': mean_convential,
         'PSD-constrained': constrained_psd,
         'OAS': shrinkage,
-        'OAS (mean)': mean_shrinkage,
+        # 'OAS (mean)': mean_shrinkage,
         # 'GraphicalLassoCV': lasso,
         # 'GraphicalLassoCV (mean)': mean_lasso,
         'CRZ': CRZ
@@ -95,21 +96,35 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore', category=UserWarning)
 
     # Let's parallelize this bad boy
-    chunksize = 20
-    piter = partial(iter_fun, X=X, estimators=estimators)
+    chunksize = 100
+    piter = partial(iter_fun, X=X, estimators=estimators, N=N, M=M)
     t0 = time() # start the timer
     with Pool() as pool:
         res = list(tqdm(pool.imap(piter, range(maxiter), chunksize),
                         leave=False, total=maxiter))
-    err = np.array(res).T
+    err = np.array(res)
+    print(err.shape)
 
     # Print output
     print('ITERS: %d' % maxiter)
     print('    M: %d' % M)
     print('    N: %d' % N)
     longest = sorted([len(key) for key in estimators])[-1]
+    print('AVG STATS:')
     print('%sMEAN%s\tSTD' % (' '*(longest+2), ' '*8))
     for ii, key in enumerate(estimators):
         print('%s%s: %f,\t%f' % (' '*(longest-len(key)), key,
                                  np.mean(err[ii, :]),
                                  np.std(err[ii, :])))
+
+    # For posterity...
+    np.savez(
+        'results/N%d_M%d_niter%d_t%s' % (N, M, maxiter, ctime()),
+        X.R, N, M, maxiter, CRB, list(estimators.keys()), err)
+
+    # See how we did
+    plt.plot(CRB, '.-', label='CRB')
+    for ii, key in enumerate(estimators):
+        plt.plot(np.std(err[ii, :]**2, axis=0), '.--', label=key)
+    plt.legend()
+    plt.show()

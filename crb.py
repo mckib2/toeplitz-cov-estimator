@@ -1,6 +1,8 @@
 '''Get the CRB limit for our model.'''
 
-def getCRB(M, N):
+import numpy as np
+
+def getCRB(M, N, Ri):
     '''Cramer-Rao bound class for Toeplitz covariance matrix.
 
     Parameters
@@ -8,11 +10,22 @@ def getCRB(M, N):
     M : int
         Length of random vector, X.
     N : int
-        Number of samples used for estimate, Rhat.
+        Number of observations.
+    Ri : array_like
+        Inverse covariance matrix
 
     Returns
     -------
     '''
 
-    print('NOT IMPLEMENTED, RETURNING ZEROS FOR CRB!')
-    return 0
+    block = np.eye(M)
+    G = np.zeros((M**2, M))
+    for ii in range(M):
+        G[M*ii:M*(ii+1), :] = np.roll(block, (0, ii), axis=-1)
+
+    J = M/2*G.T.dot(np.kron(Ri, Ri)).dot(G)
+
+    return np.abs(1/J[:, 0])
+
+if __name__ == '__main__':
+    pass

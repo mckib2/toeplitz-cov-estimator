@@ -33,7 +33,7 @@ class Model(object):
             self.R = np.diag(np.ones(M)*-1) + 1
             cnt = 0
             while not self.is_R_PSD():
-                self.R = toeplitz(np.random.normal(0, 1, M))
+                self.R = toeplitz(np.random.normal(5, 1, M))
                 cnt += 1
             # print('took %d times' % cnt)
         else:
