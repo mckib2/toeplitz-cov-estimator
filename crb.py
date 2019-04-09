@@ -23,9 +23,9 @@ def getCRB(M, N, Ri):
     for ii in range(M):
         G[M*ii:M*(ii+1), :] = np.roll(block, (0, ii), axis=-1)
 
-    J = M/2*G.T.dot(np.kron(Ri, Ri)).dot(G)
+    J = N/2*G.T.dot(np.kron(Ri, Ri)).dot(G)
 
-    return np.abs(1/J[:, 0])
+    return 1/J[:, 0]
 
 if __name__ == '__main__':
     pass
