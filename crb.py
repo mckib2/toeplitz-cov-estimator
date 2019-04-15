@@ -37,15 +37,12 @@ def getCRB(M, N, Ri):
         G[:, ii] = block.flatten()
     # print(G)
 
-    # block = np.eye(M)
-    # G = np.zeros((M**2, M))
-    # for ii in range(M):
-    #     G[M*ii:M*(ii+1), :] = np.roll(block, (0, ii), axis=-1)
-    # print(G)
-
     # print(Ri)
     J = N/2*G.T.dot(np.kron(Ri, Ri)).dot(G)
-    return np.abs(1/J[:, 0]) # Should this ever be negative?
+    print(np.sum(J < 0), J.size)
+    assert np.all(J >= 0), (
+        'All entries in Fisher information should be positive!')
+    return 1/J[:, 0]
 
 if __name__ == '__main__':
     pass

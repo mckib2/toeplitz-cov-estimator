@@ -66,7 +66,7 @@ class Model(object):
         m = np.zeros(self.M)
         return np.random.multivariate_normal(m, self.R, int(N))
 
-    def is_R_PSD(self, tol=1e-8):
+    def is_R_PSD(self, tol=0):
         '''Check to see if R is positive semi-definite.
 
         Parameters
@@ -79,7 +79,8 @@ class Model(object):
         bool
             Whether or not R is positive semi-definite.
         '''
-        E, _V = np.linalg.eigh(self.R)
+        tol = np.abs(tol)
+        E = np.linalg.eigvals(self.R)
         return np.all(E > -tol)
 
 if __name__ == '__main__':

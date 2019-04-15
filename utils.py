@@ -8,7 +8,7 @@
 #     Notes
 #     -----
 #     Non-iterative approach. This is slightly modified from Rebonato
-#     and Jackel (1999) (page 7-9).
+#     and Jackel (1999) (pages 7--9).
 #     '''
 #     n = A.shape[0]
 #     eigval, eigvec = np.linalg.eig(A)

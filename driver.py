@@ -65,6 +65,9 @@ def nearestPSD_wrapper_shrinkage(xs):
 
 if __name__ == '__main__':
 
+    do_save = False
+    maxiter = 100
+
     #1: Model parameters and initialization
     M = 10
     N = 3
@@ -76,7 +79,9 @@ if __name__ == '__main__':
     # plt.show()
 
     # 2: Get the CRB estimates of theta
-    CRB = getCRB(M, N, np.linalg.inv(X.R))
+    Ri = np.linalg.inv(X.R)
+    assert np.all(np.linalg.eigvals(Ri) >= 0)
+    CRB = getCRB(M, N, Ri)
 
     # # 4.5. Estimate using conventional sample covariance estimator
     # Ns = [10, 100, 1000, 10000]
@@ -93,7 +98,6 @@ if __name__ == '__main__':
     # estimator using a large number of Monte Carlo trials
 
     # WARNING: LASSO will take a long time!
-    maxiter = 10000
     estimators = {
         'Sample': conventional,
         # 'Meaninator': mean_convential,
@@ -112,7 +116,7 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore', category=UserWarning)
 
     # Let's parallelize this bad boy
-    chunksize = 10
+    chunksize = 100
     piter = partial(iter_fun, X=X, estimators=estimators, N=N, M=M)
     t0 = time() # start the timer
     with Pool() as pool:
@@ -134,9 +138,10 @@ if __name__ == '__main__':
                                  np.std(err[ii, :])))
 
     # For posterity...
-    np.savez(
-        'results/N%d_M%d_niter%d_t%s' % (N, M, maxiter, ctime()),
-        X.R, N, M, maxiter, CRB, list(estimators.keys()), err)
+    if do_save:
+        np.savez(
+            'results/N%d_M%d_niter%d_t%s' % (N, M, maxiter, ctime()),
+            X.R, N, M, maxiter, CRB, list(estimators.keys()), err)
 
     # See how we did
     plt.plot(CRB, '.-', label='CRB')
