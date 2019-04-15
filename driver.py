@@ -24,7 +24,7 @@ def iter_fun(_ii, X, estimators, N, M):
     Xs = X.sample(N)
 
     # Setup error array to send back (order not guaranteed)
-    err = np.zeros((len(estimators), M))
+    err = np.zeros((len(estimators), M))*np.nan
 
     # Do estimation!
     for idx, key in enumerate(estimators):
@@ -66,11 +66,12 @@ def nearestPSD_wrapper_shrinkage(xs):
 if __name__ == '__main__':
 
     do_save = False
-    maxiter = 100
+    maxiter = 100000
+    chunksize = 200
 
     #1: Model parameters and initialization
     M = 10
-    N = 3
+    N = 5
     X = Model(M)
     assert X.is_R_PSD() # Sanity check
 
@@ -83,40 +84,29 @@ if __name__ == '__main__':
     assert np.all(np.linalg.eigvals(Ri) >= 0)
     CRB = getCRB(M, N, Ri)
 
-    # # 4.5. Estimate using conventional sample covariance estimator
-    # Ns = [10, 100, 1000, 10000]
-    # for N in Ns:
-    #     xs = x.sample(N)
-    #     Rhat0 = conventional(xs)
-    #     Rhat1 = conventional(xs, biased=False)
-    #     print('N: %d' % N)
-    #     print('Rhat0 err: %g' % np.linalg.norm(x.R - Rhat0))
-    #     print('Rhat1 err: %g' % np.linalg.norm(x.R - Rhat1))
-    #     print('')
-
+    # 4.5. Estimate using conventional sample covariance estimator
     # 5. Calculate the sample estimation error variance for your
     # estimator using a large number of Monte Carlo trials
 
     # WARNING: LASSO will take a long time!
     estimators = {
         'Sample': conventional,
-        # 'Meaninator': mean_convential,
+        'Meaninator': mean_convential,
         # 'PSD-constrained': constrained_psd,
         # 'OAS': shrinkage,
         # 'OAS (mean)': mean_shrinkage,
         # 'GraphicalLassoCV': lasso,
         # 'GraphicalLassoCV (mean)': mean_lasso,
-        'CRZ': CRZ,
+        # 'CRZ': CRZ,
         # 'nearestPSD (sample)': nearestPSD_wrapper_conventional,
-        'nearestPSD (OAS)': nearestPSD_wrapper_shrinkage
+        # 'nearestPSD (OAS)': nearestPSD_wrapper_shrinkage
     }
 
-    # LASSO,, OAS gonna whine, so let's make ignore
+    # LASSO and OAS gonna whine, so let's make ignore
     warnings.filterwarnings('ignore', category=RuntimeWarning)
     warnings.filterwarnings('ignore', category=UserWarning)
 
     # Let's parallelize this bad boy
-    chunksize = 100
     piter = partial(iter_fun, X=X, estimators=estimators, N=N, M=M)
     t0 = time() # start the timer
     with Pool() as pool:

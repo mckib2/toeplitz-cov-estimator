@@ -38,8 +38,8 @@ def getCRB(M, N, Ri):
     # print(G)
 
     J = G.T.dot(np.kron(Ri, Ri)).dot(G)
-    assert np.all(np.linalg.eigvals(J) >= 0)
     C = 1/N*np.linalg.inv(J)
+    assert np.all(np.linalg.eigvals(J) >= 0)
     assert np.all(np.diag(C) >= 0)
     return np.diag(C)
 

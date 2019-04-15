@@ -5,6 +5,7 @@ from functools import partial
 import numpy as np
 # import matplotlib.pyplot as plt
 from scipy.linalg import toeplitz
+from scipy.stats import trim_mean
 # from scipy.signal import periodogram, welch
 from scipy.optimize import minimize
 from sklearn.covariance import oas, GraphicalLassoCV
@@ -69,10 +70,28 @@ def meaninator(C):
     # Make Toeplitz by using mean along all diagonals
     Rhat = np.zeros(C.shape)
     rows, cols = np.indices(C.shape)
-    for kk in range(-M+1, M):
-        val = np.mean(np.diag(C, kk))
+    # for kk in range(-M+1, M):
+    #     val = np.mean(np.diag(C, kk))
+    #     r = np.diag(rows, kk)
+    #     c = np.diag(cols, kk)
+    #     Rhat[r, c] = val
+
+    for kk in range(M):
+        vals = np.concatenate((np.diag(C, kk), np.diag(C, -kk)))
+
+        # Try trimmed mean
+        val = trim_mean(vals, .1) # trim left/right 10 percent
+
+        # # Try weighting by distance to the median
+        # med = np.median(vals)
+        # dist_to_med = np.abs(vals - med) + 1
+        # val = np.average(vals, weights=1/dist_to_med)
+
         r = np.diag(rows, kk)
         c = np.diag(cols, kk)
+        Rhat[r, c] = val
+        r = np.diag(rows, -kk)
+        c = np.diag(cols, -kk)
         Rhat[r, c] = val
 
     # We can also check to see if it's symmetric
