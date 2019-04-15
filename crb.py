@@ -12,18 +12,18 @@ def getCRB(M, N, Ri):
     N : int
         Number of observations.
     Ri : array_like
-        Inverse covariance matrix
+        Inverse covariance matrix (precision matrix).
 
     Returns
     -------
     array_like
-        The Cramer-Rao bound.
+        The Cramer-Rao bound for desired parameter vector.
 
     Notes
     -----
     Note that this should not be flat.  You have fewer entries for
-    Toeplitz entries further down the column, so lower SNR for these
-    lower elements!
+    Toeplitz entries further down the column, so fewer samples for
+    these lower elements (see construction of Jacobian, G).
     '''
 
     # We can construct the Fisher information matrix by finding where
@@ -37,12 +37,22 @@ def getCRB(M, N, Ri):
         G[:, ii] = block.flatten()
     # print(G)
 
-    # print(Ri)
-    J = N/2*G.T.dot(np.kron(Ri, Ri)).dot(G)
-    print(np.sum(J < 0), J.size)
-    assert np.all(J >= 0), (
-        'All entries in Fisher information should be positive!')
-    return 1/J[:, 0]
+    J = G.T.dot(np.kron(Ri, Ri)).dot(G)
+    assert np.all(np.linalg.eigvals(J) >= 0)
+    C = 1/N*np.linalg.inv(J)
+    assert np.all(np.diag(C) >= 0)
+    return np.diag(C)
 
 if __name__ == '__main__':
-    pass
+
+    # Sanity checks for computing CRB of Toeplitz model
+    from model import Model
+    from tqdm import trange
+    M = 10
+    N = 10
+    X = Model(M)
+
+    for _ii in trange(1000, leave=False):
+        # Find the CRB
+        CRB = getCRB(M, N, np.linalg.inv(X.R))
+        assert np.all(CRB >= 0)

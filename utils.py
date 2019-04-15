@@ -37,8 +37,15 @@ def _getPu(A, W=None):
     Aret[W > 0] = np.array(W)[W > 0]
     return np.matrix(Aret)
 
-def nearestPSD(A, nit=10):
+def nearestPSD(A, niter=10):
     '''Find nearest positive-semi-definite matrix to A.
+
+    Parameters
+    ----------
+    A : array_like
+        Matrix to find closest positive-semi-definite matrix to.
+    niter : int, optional
+        Number of iterations.
 
     Notes
     -----
@@ -50,7 +57,7 @@ def nearestPSD(A, nit=10):
     # matrix here) the algorithm should work for any diagonal W
     deltaS = 0
     Yk = A.copy()
-    for _k in range(nit):
+    for _k in range(niter):
         Rk = Yk - deltaS
         Xk = _getPs(Rk, W=W)
         deltaS = Xk - Rk

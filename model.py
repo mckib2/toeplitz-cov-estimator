@@ -37,14 +37,14 @@ class Model(object):
             #     col[ii] = a**ii
             # self.R = toeplitz(col)
 
-            # Make a Toeplitz covariance matrix, guess random ones
+            # Make a Toeplitz covariance matrix, guess random cols
             # until we find a PSD one.  Not elegant, but works with
             # some reliablity. Sorting really helps speed it up.
             self.R = np.diag(np.ones(M)*-1) + 1
             cnt = 0
             while not self.is_R_PSD():
                 self.R = toeplitz(
-                    np.sort(np.random.normal(5, 1, M))[::-1])
+                    np.sort(np.random.normal(0, 1, M))[::-1])
                 cnt += 1
             # print('took %d times' % cnt)
         else:
