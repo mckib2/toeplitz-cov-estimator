@@ -16,16 +16,36 @@ def getCRB(M, N, Ri):
 
     Returns
     -------
+    array_like
+        The Cramer-Rao bound.
+
+    Notes
+    -----
+    Note that this should not be flat.  You have fewer entries for
+    Toeplitz entries further down the column, so lower SNR for these
+    lower elements!
     '''
 
-    block = np.eye(M)
+    # We can construct the Fisher information matrix by finding where
+    # each parameter is repeated in the structured covariance matrix
     G = np.zeros((M**2, M))
+    ones = np.ones(M)
     for ii in range(M):
-        G[M*ii:M*(ii+1), :] = np.roll(block, (0, ii), axis=-1)
+        upper = np.diag(ones, ii)[:M, :M].astype(bool)
+        lower = np.diag(ones, -ii)[:M, :M].astype(bool)
+        block = (upper | lower).astype(float)
+        G[:, ii] = block.flatten()
+    # print(G)
 
+    # block = np.eye(M)
+    # G = np.zeros((M**2, M))
+    # for ii in range(M):
+    #     G[M*ii:M*(ii+1), :] = np.roll(block, (0, ii), axis=-1)
+    # print(G)
+
+    # print(Ri)
     J = N/2*G.T.dot(np.kron(Ri, Ri)).dot(G)
-
-    return 1/J[:, 0]
+    return np.abs(1/J[:, 0]) # Should this ever be negative?
 
 if __name__ == '__main__':
     pass

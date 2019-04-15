@@ -14,6 +14,7 @@ from crb import getCRB
 from estimators import (meaninator, conventional, constrained_psd,
                         shrinkage, lasso)
 from structured_estimators import CRZ
+from utils import nearestPSD
 
 def iter_fun(_ii, X, estimators, N, M):
     '''Picklable function that runs every iteration of parallel loop.
@@ -54,12 +55,25 @@ def mean_lasso(xs):
     '''Picklable meaninator+lasso'''
     return meaninator(lasso(xs))
 
+def nearestPSD_wrapper_conventional(xs):
+    '''Wrapper for nearest PSD function.'''
+    return nearestPSD(meaninator(conventional(xs)))
+
+def nearestPSD_wrapper_shrinkage(xs):
+    '''Wrapper for nearest PSD function.'''
+    return nearestPSD(meaninator(shrinkage(xs)))
+
 if __name__ == '__main__':
 
     #1: Model parameters and initialization
     M = 10
     N = 3
     X = Model(M)
+    assert X.is_R_PSD() # Sanity check
+
+    # # Is the precision matrix sparse?
+    # plt.imshow(np.linalg.inv(X.R))
+    # plt.show()
 
     # 2: Get the CRB estimates of theta
     CRB = getCRB(M, N, np.linalg.inv(X.R))
@@ -82,13 +96,15 @@ if __name__ == '__main__':
     maxiter = 10000
     estimators = {
         'Sample': conventional,
-        'Meaninator': mean_convential,
-        'PSD-constrained': constrained_psd,
-        'OAS': shrinkage,
+        # 'Meaninator': mean_convential,
+        # 'PSD-constrained': constrained_psd,
+        # 'OAS': shrinkage,
         # 'OAS (mean)': mean_shrinkage,
         # 'GraphicalLassoCV': lasso,
         # 'GraphicalLassoCV (mean)': mean_lasso,
-        'CRZ': CRZ
+        'CRZ': CRZ,
+        # 'nearestPSD (sample)': nearestPSD_wrapper_conventional,
+        'nearestPSD (OAS)': nearestPSD_wrapper_shrinkage
     }
 
     # LASSO,, OAS gonna whine, so let's make ignore
@@ -96,7 +112,7 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore', category=UserWarning)
 
     # Let's parallelize this bad boy
-    chunksize = 100
+    chunksize = 10
     piter = partial(iter_fun, X=X, estimators=estimators, N=N, M=M)
     t0 = time() # start the timer
     with Pool() as pool:

@@ -25,7 +25,10 @@ def lasso(xs):
     Notes
     -----
     This implementation uses cross-validation to find the correct
-    weight for Lasso.
+    weight for Lasso.  Graphical Lasso is a method for finding a
+    sparse inverse covariance matrix, so this is additional
+    information that might not follow from having a Toeplitz
+    covariance matrix...
     '''
     model = GraphicalLassoCV(cv=3)
     model.fit(xs)

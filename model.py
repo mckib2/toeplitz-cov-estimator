@@ -1,7 +1,8 @@
 '''Gaussian random variables with Toeplitz covariance matrix.'''
 
 import numpy as np
-from scipy.linalg import toeplitz, eigh
+from scipy.linalg import toeplitz
+from tqdm import trange
 
 class Model(object):
     '''M length Gaussian random vector.
@@ -27,13 +28,23 @@ class Model(object):
         self.M = M
 
         if R is None:
+
+            # # Geometric model satisfies Gershgorin circle theorem,
+            # # but only works well when a close to 1...
+            # col = np.zeros(M)
+            # a = np.abs(np.random.random(1))
+            # for ii in range(M):
+            #     col[ii] = a**ii
+            # self.R = toeplitz(col)
+
             # Make a Toeplitz covariance matrix, guess random ones
             # until we find a PSD one.  Not elegant, but works with
-            # some reliablity.
+            # some reliablity. Sorting really helps speed it up.
             self.R = np.diag(np.ones(M)*-1) + 1
             cnt = 0
             while not self.is_R_PSD():
-                self.R = toeplitz(np.random.normal(5, 1, M))
+                self.R = toeplitz(
+                    np.sort(np.random.normal(5, 1, M))[::-1])
                 cnt += 1
             # print('took %d times' % cnt)
         else:
@@ -68,5 +79,18 @@ class Model(object):
         bool
             Whether or not R is positive semi-definite.
         '''
-        E, _V = eigh(self.R)
+        E, _V = np.linalg.eigh(self.R)
         return np.all(E > -tol)
+
+if __name__ == '__main__':
+
+    # Test model to make sure we get PSD toeplitz matrices
+    M = 10
+    err = 0
+    for _ii in trange(1000, leave=False):
+        X = Model(M)
+        try:
+            assert X.is_R_PSD()
+        except AssertionError:
+            err += 1
+    print('%d errors' % err)
