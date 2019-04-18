@@ -80,7 +80,8 @@ def meaninator(C):
         vals = np.concatenate((np.diag(C, kk), np.diag(C, -kk)))
 
         # Try trimmed mean
-        val = trim_mean(vals, .1) # trim left/right 10 percent
+        #val = trim_mean(vals, .1) # trim left/right 10 percent
+        val = np.mean(vals) # When N large, we really want all of them
 
         # # Try weighting by distance to the median
         # med = np.median(vals)

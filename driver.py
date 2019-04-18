@@ -28,12 +28,12 @@ def iter_fun(_ii, X, estimators, N, M):
 
     # Do estimation!
     for idx, key in enumerate(estimators):
-        try:
+        #try:
             # err[idx] = compare_mse(X.R, estimators[key](Xs))
-            err[idx, :] = X.R[0, :] - estimators[key](Xs)[0, :]
-        except ValueError:
-            # LASSO wants a few samples to work with
-            pass
+        err[idx, :] = X.R[0, :] - estimators[key](Xs)[0, :]
+        #except ValueError:
+        #    # LASSO wants a few samples to work with
+        #    pass
         # except UserWarning:
         #     # OAS will complain sometimes about only 1 sample
         #     pass
@@ -65,13 +65,13 @@ def nearestPSD_wrapper_shrinkage(xs):
 
 if __name__ == '__main__':
 
-    do_save = False
-    maxiter = 100000
-    chunksize = 200
+    do_save = True
+    maxiter = 10e6
+    chunksize = 50
 
     #1: Model parameters and initialization
     M = 10
-    N = 5
+    N = 20
     X = Model(M)
     assert X.is_R_PSD() # Sanity check
 
@@ -92,9 +92,9 @@ if __name__ == '__main__':
     estimators = {
         'Sample': conventional,
         'Meaninator': mean_convential,
-        # 'PSD-constrained': constrained_psd,
-        # 'OAS': shrinkage,
-        # 'OAS (mean)': mean_shrinkage,
+        #'PSD-constrained': constrained_psd,
+        #'OAS': shrinkage,
+        #'OAS (mean)': mean_shrinkage,
         # 'GraphicalLassoCV': lasso,
         # 'GraphicalLassoCV (mean)': mean_lasso,
         # 'CRZ': CRZ,
@@ -110,8 +110,8 @@ if __name__ == '__main__':
     piter = partial(iter_fun, X=X, estimators=estimators, N=N, M=M)
     t0 = time() # start the timer
     with Pool() as pool:
-        res = list(tqdm(pool.imap(piter, range(maxiter), chunksize),
-                        leave=False, total=maxiter))
+        res = list(tqdm(pool.imap(piter, range(int(maxiter)), chunksize),
+                        leave=False, total=int(maxiter)))
     err = np.array(res)
     print(err.shape)
 
@@ -129,9 +129,12 @@ if __name__ == '__main__':
 
     # For posterity...
     if do_save:
-        np.savez(
-            'results/N%d_M%d_niter%d_t%s' % (N, M, maxiter, ctime()),
-            X.R, N, M, maxiter, CRB, list(estimators.keys()), err)
+        try:
+            np.savez(
+                '/media/admin/59292fc0-85e9-4205-9445-95741a99d468/results/N%d_M%d_niter%d_t%s' % (N, M, maxiter, ctime()),
+                X.R, N, M, maxiter, CRB, list(estimators.keys()), err)
+        except IOError:
+            print('Failed to save!')
 
     # See how we did
     plt.plot(CRB, '.-', label='CRB')
