@@ -11,11 +11,11 @@ class Model(object):
     ----------
     M : int
         Lenth of random vector.
-    R : array_like
+    R : array_like, optional
         Covariance matrix, Toeplitz.
     '''
 
-    def __init__(self, M, R=None):
+    def __init__(self, M, R=None, exp=False, a=.9):
         '''Initialize model for vector of random variables.
 
         Parameters
@@ -24,29 +24,38 @@ class Model(object):
             Length of random vector.
         R : array_like, optional
             Covariance matrix.
+        exp : bool, optional
+            Whether or not to generate R using exponential model or
+            choose random parameters until a positive semidefinite,
+            Toeplitz R is found.
+        a : float, optional
+            If using exponential model, the parameter a. 0 < a < 1.
         '''
         self.M = M
 
         if R is None:
 
-            # # Geometric model satisfies Gershgorin circle theorem,
-            # # but only works well when a close to 1...
-            # col = np.zeros(M)
-            # a = np.abs(np.random.random(1))
-            # for ii in range(M):
-            #     col[ii] = a**ii
-            # self.R = toeplitz(col)
+            # Geometric model satisfies Gershgorin circle theorem,
+            # but only works well when a close to 1...
+            if exp:
+                col = np.zeros(M)
+                for ii in range(M):
+                    col[ii] = a**ii
+                self.R = toeplitz(col)
 
-            # Make a Toeplitz covariance matrix, guess random cols
-            # until we find a PSD one.  Not elegant, but works with
-            # some reliablity. Sorting really helps speed it up.
-            self.R = np.diag(np.ones(M)*-1) + 1
-            cnt = 0
-            while not self.is_R_PSD():
-                self.R = toeplitz(
-                    np.sort(np.random.normal(0, 1, M))[::-1])
-                cnt += 1
-            # print('took %d times' % cnt)
+            else:
+
+                # Make a Toeplitz covariance matrix, guess random cols
+                # until we find a PSD one.  Not elegant, but works
+                # with some reliablity. Sorting really helps speed it
+                # up.
+                self.R = np.diag(np.ones(M)*-1) + 1
+                cnt = 0
+                while not self.is_R_PSD():
+                    self.R = toeplitz(
+                        np.sort(np.random.normal(0, 1, M))[::-1])
+                    cnt += 1
+                # print('took %d times' % cnt)
         else:
             self.R = R
 
